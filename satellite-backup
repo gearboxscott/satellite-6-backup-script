@@ -1,0 +1,3 @@
+# Run ansible-tower-backup.sh daily at 1:00 am
+0 1 * * * root /usr/local/sbin/ansible-backup
+
