@@ -1,51 +1,19 @@
 #!/bin/bash
 
-source /var/lib/awx/venv/ansible/bin/activate
+DESTINATION=/backup
+YEAR=$(date +%Y)
+WEEK=$(date +%-V)
+NEEDS_FULL=0
 
-export SOURCE=/root/ansible/ansible-tower-setup-3.8.0-1
-export INVENTORY=$SOURCE/inventory
-export DESTINATION=/root/ansible/ansible-tower-setup-3.8.0-1
-export YEAR=$(date +%Y)
-export WEEK=$(date +%-V)
-export KEEP=2
-export FULL_DESTINATION=${DESTINATION}/${YEAR}/${WEEK}
-export LOG=${FULL_DESTINATION}/ansible-tower-backups.log
-
-cd $SOURCE/
-mkdir -p $FULL_DESTINATION
-
-echo "
-
-======================================================================================
-= Housekeeping Ansible Tower Backup -- $(date)
-======================================================================================
-
-$(pwd)
-
-" >>$LOG
-
-if [ -d $DESTINATION/$YEAR/$((WEEK - KEEP)) ]; then
-   rm -rf $DESTINATION/$YEAR/$((WEEK - KEEP)) 1
+if [ -d $DESTINATION/$YEAR-$((WEEK - 2)) ]; then 
+   rm -rf $DESTINATION/$YEAR-$((WEEK - 2))
 fi
-
-echo "
-
-======================================================================================
-= Starting Ansible Tower Backup -- $(date)
-======================================================================================
-
-$(pwd)
-
-" >>$LOG
-
-$SOURCE/setup.sh -e "backup_dest=${FULL_DESTINATION}" -i $INVENTORY -b >> $LOG
-
-echo "
-
-======================================================================================
-= Ending Ansible Tower Backup   -- $(date)
-======================================================================================
-
-" >>$LOG
-
-
+if [ ! -d $DESTINATION/$YEAR-$WEEK/ ]; then 
+   mkdir $DESTINATION/$YEAR-$WEEK 2 NEEDS_FULL=1
+fi
+if [[ $(date +%w) == 0 || $NEEDS_FULL == 1 ]]; then
+   foreman-maintain backup snapshot --assumeyes --features all $DESTINATION/$YEAR-$((WEEK + 1))
+else
+   LAST=$(ls -td -- $DESTINATION/$YEAR-$WEEK/*/ | head -n 1)
+   foreman-maintain backup snapshot --incremental "$LAST" --assumeyes --features all $DESTINATION/$YEAR-$WEEK
+if
