@@ -5,7 +5,6 @@ WEEK=$( date +%-V )
 DOW=$( date +%w )
 NEEDS_FULL=0
 DAY_OF_WEEK=1
-
 WEEKS_BACK=2
 OWNER=root
 GROUP=postgres
