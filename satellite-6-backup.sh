@@ -1,19 +1,28 @@
 #!/bin/bash
 
-DESTINATION=/backup
 YEAR=$(date +%Y)
 WEEK=$(date +%-V)
 NEEDS_FULL=0
+DAY_OF_WEEK=1
+WEEKS_BACK=2
+OWNER=root
+GROUP=postgres
+DESTINATION=/backup
+OUT_DESTINATION=$DESTINATION/$YEAR-$WEEK/
+REMOVE_DESTINATION=$DESTINATION/$YEAR-$((WEEK - WEEKS_BACK))
+WEEK_FORWARD_DESTINATION=$DESTINATION/$YEAR-$((WEEK + 1))
 
-if [ -d $DESTINATION/$YEAR-$((WEEK - 2)) ]; then 
-   rm -rf $DESTINATION/$YEAR-$((WEEK - 2))
+if [[ $(date +%w) == $DAY_OF_WEEK || -d $REMOVE_DESTINATION ]]; then 
+   rm -rf $REMOVE_DESTINATION
 fi
-if [ ! -d $DESTINATION/$YEAR-$WEEK/ ]; then 
-   mkdir $DESTINATION/$YEAR-$WEEK 2 NEEDS_FULL=1
+if [ ! -d $OUT_DESTINATION ]; then 
+   mkdir $OUT_DESTINATION
+   chown $OWNER:$GROUP $OUT_DESTINATION
+   NEEDS_FULL=1
 fi
-if [[ $(date +%w) == 0 || $NEEDS_FULL == 1 ]]; then
-   foreman-maintain backup snapshot --assumeyes --features all $DESTINATION/$YEAR-$((WEEK + 1))
+if [[ $(date +%w) == $DAY_OF_WEEK || $NEEDS_FULL == 1 ]]; then
+   foreman-maintain backup snapshot --assumeyes --features all $WEEK_FORWARD_DESTINATION
 else
-   LAST=$(ls -td -- $DESTINATION/$YEAR-$WEEK/*/ | head -n 1)
-   foreman-maintain backup snapshot --incremental "$LAST" --assumeyes --features all $DESTINATION/$YEAR-$WEEK
+   LAST=$(ls -td -- $OUT_DESTINATION/*/ | head -n 1)
+   foreman-maintain backup snapshot --incremental "$LAST" --assumeyes --features all $OUT_DESTINATION
 if
