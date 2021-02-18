@@ -52,4 +52,4 @@ Scott Parker - Red Hat North American Consulting
 Credits
 -------------------
 ---
-Credit goes to the authors for the [foreman-ansible-modules](https://github.com/theforeman/foreman-ansible-modules) 
+None
